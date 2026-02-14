@@ -2322,97 +2322,85 @@ local WatermarkScreenGui = nil
 local WatermarkEnabled = true
 local WatermarkDragging = false
 
-local VIM = game:GetService("VirtualInputManager")
-
 function Library:CreateWatermark(cheatName)
     if Watermark_Frame then return end
     
+    -- Create a separate ScreenGui for watermark
     WatermarkScreenGui = Instance.new("ScreenGui")
     WatermarkScreenGui.Name = "WatermarkScreenGui"
     WatermarkScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
     WatermarkScreenGui.ResetOnSpawn = false
     WatermarkScreenGui.Parent = game:GetService("CoreGui")
     
+    -- Create watermark frame
     Watermark_Frame = Instance.new("Frame")
     Watermark_Frame.Size = UDim2.new(0, 150, 0, 45)
     Watermark_Frame.Name = "Watermark_Frame"
     Watermark_Frame.Position = UDim2.new(0.011217948980629444, 0, 0.014925372786819935, 0)
+    Watermark_Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
     Watermark_Frame.BorderSizePixel = 0
     Watermark_Frame.AutomaticSize = Enum.AutomaticSize.XY
     Watermark_Frame.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
     Watermark_Frame.Visible = WatermarkEnabled
-    Watermark_Frame.Active = true
     Watermark_Frame.Parent = WatermarkScreenGui
-
     UIScaleWatermark = UIScaleWatermark or Instance.new("UIScale")
     UIScaleWatermark.Parent = Watermark_Frame
     
+    -- Add corner radius
     local UICorner = Instance.new("UICorner")
     UICorner.CornerRadius = UDim.new(0, 6)
     UICorner.Parent = Watermark_Frame
     
+    -- Create library name label
     local Libary_Name = Instance.new("TextLabel")
     Libary_Name.FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.SemiBold, Enum.FontStyle.Normal)
     Libary_Name.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Libary_Name.Text = cheatName or "STARHUB"
+    Libary_Name.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    Libary_Name.Text = cheatName or "STARHUB" -- Use provided cheat name or default
     Libary_Name.Name = "Libary_Name"
     Libary_Name.AnchorPoint = Vector2.new(0, 0.5)
+    Libary_Name.Size = UDim2.new(0, 1, 0, 1)
     Libary_Name.BackgroundTransparency = 1
     Libary_Name.Position = UDim2.new(0, 48, 0.5, 0)
+    Libary_Name.BorderSizePixel = 0
     Libary_Name.AutomaticSize = Enum.AutomaticSize.XY
     Libary_Name.TextSize = 21
     Libary_Name.TextXAlignment = Enum.TextXAlignment.Left
+    Libary_Name.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     Libary_Name.Parent = Watermark_Frame
     
+    -- Create library icon
     local Libary_Icon = Instance.new("ImageLabel")
     Libary_Icon.ImageColor3 = Library.Accent
+    Libary_Icon.BorderColor3 = Color3.fromRGB(0, 0, 0)
     Libary_Icon.Name = "Watermark_Icon"
     Libary_Icon.AnchorPoint = Vector2.new(0.5, 0.5)
     Libary_Icon.Image = "rbxassetid://132964100967987"
     Libary_Icon.BackgroundTransparency = 1
     Libary_Icon.Position = UDim2.new(0.17633333802223206, 1, 0.4620000123977661, 0)
     Libary_Icon.Size = UDim2.new(0, 20, 0, 20)
+    Libary_Icon.BorderSizePixel = 0
+    Libary_Icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     Libary_Icon.Parent = Watermark_Frame
     
+    -- Create inline accent
     local Inline = Instance.new("Frame")
-    Inline.Name = "Inline"
+    Inline.BorderColor3 = Library.Accent
     Inline.AnchorPoint = Vector2.new(0, 1)
+    Inline.Name = "Inline"
     Inline.Position = UDim2.new(0, 0, 1, 0)
     Inline.Size = UDim2.new(1, 1, 0, 4)
+    Inline.BorderSizePixel = 0
+    Inline.AutomaticSize = Enum.AutomaticSize.XY
     Inline.BackgroundColor3 = Library.Accent
     Inline.Parent = Watermark_Frame
     
+    -- Add corner radius to inline
     local InlineCorner = Instance.new("UICorner")
     InlineCorner.CornerRadius = UDim.new(0, 6)
     InlineCorner.Parent = Inline
-
-    -- CLICK / TAP = TOGGLE MENU (Insert Simulation)
-    local pressTime = 0
-    local startPos = nil
-
-    Watermark_Frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-            pressTime = tick()
-            startPos = input.Position
-        end
-    end)
-
-    Watermark_Frame.InputEnded:Connect(function(input)
-        if not startPos then return end
-
-        local duration = tick() - pressTime
-        local moveDistance = (input.Position - startPos).Magnitude
-
-        if duration < 0.25 and moveDistance < 10 then
-            VIM:SendKeyEvent(true, Enum.KeyCode.Insert, false, game)
-            VIM:SendKeyEvent(false, Enum.KeyCode.Insert, false, game)
-        end
-
-        startPos = nil
-    end)
-
-    -- Dragging only when menu open (your original logic)
+    
+    -- Make watermark draggable when menu is open
     local dragConnection
     local function updateDragging()
         if dragConnection then
@@ -2421,36 +2409,47 @@ function Library:CreateWatermark(cheatName)
         end
         
         if MainFrame.Visible and WatermarkEnabled then
+            -- Enable dragging when menu is open
             dragConnection = makeDraggable(Watermark_Frame)
         end
     end
     
+    -- Update dragging state when main frame visibility changes
     MainFrame:GetPropertyChangedSignal("Visible"):Connect(updateDragging)
-    updateDragging()
+    updateDragging() -- Initial setup
     
+    -- Auto-scale width based on text content
     local function updateWatermarkSize()
         if not Watermark_Frame or not WatermarkEnabled then return end
         
+        -- Get text bounds
         local textBounds = Libary_Name.TextBounds
         local iconWidth = 20
-        local padding = 24
+        local padding = 24 -- 12px on each side
         local minWidth = 120
         local maxWidth = 300
         
         local calculatedWidth = math.max(minWidth, math.min(maxWidth, textBounds.X + iconWidth + padding))
+        
+        -- Update frame size
         Watermark_Frame.Size = UDim2.new(0, calculatedWidth, 0, 45)
         
+        -- Check if watermark is going out of screen bounds
+        local screenSize = game:GetService("GuiService"):GetGuiInset()
         local watermarkPos = Watermark_Frame.AbsolutePosition
         local watermarkSize = Watermark_Frame.AbsoluteSize
         
         if watermarkPos.X + watermarkSize.X > workspace.CurrentCamera.ViewportSize.X - 10 then
+            -- Move watermark to left side if it's going out of bounds
             Watermark_Frame.Position = UDim2.new(0, 10, 0, watermarkPos.Y)
         end
     end
     
+    -- Update size when text changes
     Libary_Name:GetPropertyChangedSignal("Text"):Connect(updateWatermarkSize)
-    updateWatermarkSize()
+    updateWatermarkSize() -- Initial sizing
     
+    -- Ensure watermark uses current accent color
     Library:UpdateWatermarkAccent()
     
     return Watermark_Frame
@@ -2476,7 +2475,6 @@ function Library:UpdateWatermarkAccent()
         end
     end
 end
-
 
 function Library:UpdateConfigAccent()
     -- Update all config sections
